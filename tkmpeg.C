@@ -25,17 +25,20 @@ TkMPEG* tkmpeg=NULL;
 
 int Tkmpeg_Init(Tcl_Interp* interp) {
 
-  // Initialize Frame Widget
-  Tcl_CreateCommand(interp, "tkmpeg", TkmpegCmd,
+  // Define Package Name
+  if (Tcl_PkgProvide(interp, "tkmpeg", "1.0") == TCL_ERROR)
+    return TCL_ERROR;
+
+  // Commands
+  Tcl_CreateCommand(interp, "mpeg", TkmpegCmd,
 		    (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
   tkmpeg = new TkMPEG(interp);
 
-  // Define Package Name
-  if (Tcl_PkgProvide(interp, "saotk", "1.0") == TCL_ERROR)
+  if (tkmpeg)
+    return TCL_OK;
+  else
     return TCL_ERROR;
-
-  return TCL_OK;
 }
 
 int TkmpegCmd(ClientData data,Tcl_Interp *interp,int argc,const char* argv[])
@@ -46,7 +49,7 @@ int TkmpegCmd(ClientData data,Tcl_Interp *interp,int argc,const char* argv[])
     else if (!strncmp(argv[1], "add", 3))
       return tkmpeg->add(argc, argv);
     else if (!strncmp(argv[1], "close", 3))
-      return tkmpeg->finish(argc, argv);
+      return tkmpeg->close(argc, argv);
     else {
       Tcl_AppendResult(interp, "tkmpeg: unknown command: ", argv[1], NULL);
       return TCL_ERROR;
@@ -60,87 +63,106 @@ int TkmpegCmd(ClientData data,Tcl_Interp *interp,int argc,const char* argv[])
 
 TkMPEG::TkMPEG(Tcl_Interp* intp)
 {
+  interp = intp;
+
   width = 512;
   height = 512;
-  fps = 25;
   quality = 2;
 }
 
 int TkMPEG::create(int argc, const char* argv[])
 {
-  if (argc == 5) {
-    if (argv[0] == '\0') {
+  if (argc == 7) {
+    if (argv[2] == '\0') {
 	Tcl_AppendResult(interp, "bad filename", NULL);
 	return TCL_ERROR;
     }
     {
-      string s(argv[1]);
+      string s(argv[3]);
       istringstream str(s);
       str >> width;
     }
     {
-      string s(argv[2]);
+      string s(argv[4]);
       istringstream str(s);
       str >> height;
     }
     {
-      string s(argv[3]);
+      string s(argv[5]);
       istringstream str(s);
       str >> fps;
     }
     {
-      string s(argv[4]);
+      string s(argv[6]);
       istringstream str(s);
       str >> quality;
     }
 
-    if (width < 1) {
-      Tcl_AppendResult(interp, "bad width", NULL);
-      return TCL_ERROR;
-    }
-    if (height < 1) {
-      Tcl_AppendResult(interp, "bad height", NULL);
-      return TCL_ERROR;
-    }
-    if (fps < 1 || fps > 25) {
-      Tcl_AppendResult(interp, "only frame rates between 1 and 25 are suppored", NULL);
-      return TCL_ERROR;
-    }
-    if (quality < 1 || quality > 31) {
-      Tcl_AppendResult(interp, "only quality factors between 1 (best) and 31 (worst) are suppored", NULL);
-      return TCL_ERROR;
-    }
-
-    if(!ezMPEG_Init(&ms, argv[0], width, height, fps, 30, quality)) {
-      Tcl_AppendResult(interp, ezMPEG_GetLastError(&ms), NULL);
+    if(!ezMPEG_Init(&ms, argv[2], width, height, fps, 30, quality)) {
+      Tcl_AppendResult(interp, "ezMPEG_Init ", ezMPEG_GetLastError(&ms), NULL);
       return TCL_ERROR;
     }
     if(!ezMPEG_Start(&ms)) {
-      Tcl_AppendResult(interp, ezMPEG_GetLastError(&ms), NULL);
+      Tcl_AppendResult(interp, "ezMPEG_Start ", ezMPEG_GetLastError(&ms),NULL);
       return TCL_ERROR;
     }
   }
-  else 
-    Tcl_AppendResult(interp, "usage: tkmpeg create ?filename?width?height?fps?quality?", NULL);
+  else {
+    Tcl_AppendResult(interp, "usage: tkmpeg create <filename> <width> <height> <quality>", NULL);
     return TCL_ERROR;
+  }
+
+  return TCL_OK;
 }
 
 int TkMPEG::add(int argc, const char* argv[])
 {
-  unsigned char pict[width*height*3];
-  memset(pict,0,width*height*3);
+  if (argv[2] == '\0') {
+    Tcl_AppendResult(interp, "bad image name", NULL);
+    return TCL_ERROR;
+  }
+  Tk_PhotoHandle photo = Tk_FindPhoto(interp, argv[2]);
+  if (!photo) {
+    Tcl_AppendResult(interp, "bad image handle", NULL);
+    return TCL_ERROR;
+  }
+  Tk_PhotoImageBlock block;
+  if (!Tk_PhotoGetImage(photo,&block)) {
+    Tcl_AppendResult(interp, "bad image block", NULL);
+    return TCL_ERROR;
+  }
+
+  int w = ms.hsize*16;
+  int h = ms.vsize*16;
+
+  unsigned char pict[w*h*3];
+  unsigned char* src = block.pixelPtr;
+  unsigned char* dst = pict;
+
+  memset(pict,0,w*h*3);
+  
+  for (int j=0; j<h; j++)
+    for (int i=0; i<w; i++) {
+      *dst++ = src[(j*width+i)*block.pixelSize+block.offset[0]];
+      *dst++ = src[(j*width+i)*block.pixelSize+block.offset[1]];
+      *dst++ = src[(j*width+i)*block.pixelSize+block.offset[2]];
+    }
 
   if(!ezMPEG_Add(&ms, pict)) {
-    Tcl_AppendResult(interp, ezMPEG_GetLastError(&ms), NULL);
+    Tcl_AppendResult(interp, "ezMPEG_Add ", ezMPEG_GetLastError(&ms), NULL);
     return TCL_ERROR;
   }
+
+  return TCL_OK;
 }
 
-int TkMPEG::finish(int argc, const char* argv[])
+int TkMPEG::close(int argc, const char* argv[])
 {
   if(!ezMPEG_Finalize(&ms)) {
-    Tcl_AppendResult(interp, ezMPEG_GetLastError(&ms), NULL);
+    Tcl_AppendResult(interp, "ezMPEG_Finalize", ezMPEG_GetLastError(&ms), NULL);
     return TCL_ERROR;
   }
+
+  return TCL_OK;
 }
 

@@ -24,7 +24,7 @@ class TkMPEG {
 
   int create(int, const char*[]);
   int add(int, const char*[]);
-  int finish(int, const char*[]);
+  int close(int, const char*[]);
 };
 
 extern TkMPEG* tkmpeg;
