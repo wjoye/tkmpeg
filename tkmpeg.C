@@ -140,7 +140,7 @@ int TkMPEG::add(int argc, const char* argv[])
   int w = ms.hsize*16;
   int h = ms.vsize*16;
 
-  unsigned char* pict = new char[w*h*3];
+  unsigned char* pict = new unsigned char[w*h*3];
   if (!pict) {
     Tcl_AppendResult(interp, "unable to alloc memory", NULL);
     return TCL_ERROR;
