@@ -140,12 +140,16 @@ int TkMPEG::add(int argc, const char* argv[])
   int w = ms.hsize*16;
   int h = ms.vsize*16;
 
-  unsigned char pict[w*h*3];
+  unsigned char* pict = new char[w*h*3];
+  if (!pict) {
+    Tcl_AppendResult(interp, "unable to alloc memory", NULL);
+    return TCL_ERROR;
+  }
+  memset(pict,0,w*h*3);
+  
   unsigned char* src = block.pixelPtr;
   unsigned char* dst = pict;
 
-  memset(pict,0,w*h*3);
-  
   for (int j=0; j<h; j++)
     for (int i=0; i<w; i++) {
       *dst++ = src[(j*width+i)*block.pixelSize+block.offset[0]];
@@ -155,16 +159,21 @@ int TkMPEG::add(int argc, const char* argv[])
 
   if(!ezMPEG_Add(&ms, pict)) {
     Tcl_AppendResult(interp, "ezMPEG_Add ", ezMPEG_GetLastError(&ms), NULL);
+    if (pict)
+      delete [] pict;
+
     return TCL_ERROR;
   }
 
+  if (pict)
+    delete [] pict;
   return TCL_OK;
 }
 
 int TkMPEG::close(int argc, const char* argv[])
 {
   if(!ezMPEG_Finalize(&ms)) {
-    Tcl_AppendResult(interp, "ezMPEG_Finalize", ezMPEG_GetLastError(&ms), NULL);
+    Tcl_AppendResult(interp, "ezMPEG_Finalize", ezMPEG_GetLastError(&ms),NULL);
     return TCL_ERROR;
   }
 
