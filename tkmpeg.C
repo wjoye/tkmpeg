@@ -72,7 +72,7 @@ TkMPEG::TkMPEG(Tcl_Interp* intp)
 
 int TkMPEG::create(int argc, const char* argv[])
 {
-  if (argc == 7) {
+  if (argc == 8) {
     if (argv[2] == '\0') {
 	Tcl_AppendResult(interp, "bad filename", NULL);
 	return TCL_ERROR;
@@ -95,10 +95,15 @@ int TkMPEG::create(int argc, const char* argv[])
     {
       string s(argv[6]);
       istringstream str(s);
+      str >> gop;
+    }
+    {
+      string s(argv[7]);
+      istringstream str(s);
       str >> quality;
     }
 
-    if(!ezMPEG_Init(&ms, argv[2], width, height, fps, 30, quality)) {
+    if(!ezMPEG_Init(&ms, argv[2], width, height, fps, gop, quality)) {
       Tcl_AppendResult(interp, "ezMPEG_Init ", ezMPEG_GetLastError(&ms), NULL);
       return TCL_ERROR;
     }
@@ -108,7 +113,7 @@ int TkMPEG::create(int argc, const char* argv[])
     }
   }
   else {
-    Tcl_AppendResult(interp, "usage: tkmpeg create <filename> <width> <height> <quality>", NULL);
+    Tcl_AppendResult(interp, "usage: tkmpeg create <filename> <width> <height> <fps> <gop> <quality>", NULL);
     return TCL_ERROR;
   }
 

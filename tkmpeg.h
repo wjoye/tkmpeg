@@ -16,6 +16,7 @@ class TkMPEG {
   int width;
   int height;
   int fps;
+  int gop;
   int quality;
 
  public:
