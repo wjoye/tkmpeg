@@ -11,6 +11,7 @@ using namespace std;
 #include <strstream.h>
 #endif
 
+#include <string.h>
 #include <tk.h>
 
 #include "tkmpeg.h"
