@@ -2,14 +2,9 @@
 // Smithsonian Astrophysical Observatory, Cambridge, MA, USA
 // For conditions of distribution and use, see copyright notice in "copyright"
 
-#if __GNUC__ >= 3
 #include <iostream>
 #include <sstream>
 using namespace std;
-#else
-#include <iostream.h>
-#include <strstream.h>
-#endif
 
 #include <string.h>
 #include <tk.h>
@@ -79,7 +74,6 @@ TkMPEG::TkMPEG(Tcl_Interp* intp)
 	return TCL_ERROR;
     }
 
-#if __GNUC__ >= 3
     {
       string s(argv[3]);
       istringstream str(s);
@@ -105,28 +99,6 @@ TkMPEG::TkMPEG(Tcl_Interp* intp)
       istringstream str(s);
       str >> quality;
     }
-#else
-    {
-      istrstream str(argv[3]);
-      str >> width;
-    }
-    {
-      istrstream str(argv[4]);
-      str >> height;
-    }
-    {
-      istrstream str(argv[5]);
-      str >> fps;
-    }
-    {
-      istrstream str(argv[6]);
-      str >> gop;
-    }
-    {
-      istringstream str(argv[7]);
-      str >> quality;
-    }
-#endif
 
     if(!ezMPEG_Init(&ms, argv[2], width, height, fps, gop, quality)) {
       Tcl_AppendResult(interp, "ezMPEG_Init ", ezMPEG_GetLastError(&ms), NULL);
