@@ -100,7 +100,11 @@ TkMPEG::TkMPEG(Tcl_Interp* intp)
       str >> quality;
     }
 
-    if(!ezMPEG_Init(&ms, argv[2], width, height, fps, gop, quality)) {
+    // width and height must be a multiple of 16
+    int ww = int(width/16.+1)*16;
+    int hh = int(height/16.+1)*16;
+
+    if(!ezMPEG_Init(&ms, argv[2], ww, hh, fps, gop, quality)) {
       Tcl_AppendResult(interp, "ezMPEG_Init ", ezMPEG_GetLastError(&ms), NULL);
       return TCL_ERROR;
     }
@@ -134,24 +138,31 @@ int TkMPEG::add(int argc, const char* argv[])
     return TCL_ERROR;
   }
 
-  int w = ms.hsize*16;
-  int h = ms.vsize*16;
+  int ww = ms.hsize*16;
+  int hh = ms.vsize*16;
 
-  unsigned char* pict = new unsigned char[w*h*3];
+  unsigned char* pict = new unsigned char[ww*hh*3];
   if (!pict) {
     Tcl_AppendResult(interp, "unable to alloc memory", NULL);
     return TCL_ERROR;
   }
-  memset(pict,0,w*h*3);
+  memset(pict,0,ww*hh*3);
   
   unsigned char* src = block.pixelPtr;
   unsigned char* dst = pict;
 
-  for (int j=0; j<h; j++)
-    for (int i=0; i<w; i++) {
-      *dst++ = src[(j*width+i)*block.pixelSize+block.offset[0]];
-      *dst++ = src[(j*width+i)*block.pixelSize+block.offset[1]];
-      *dst++ = src[(j*width+i)*block.pixelSize+block.offset[2]];
+  for (int jj=0; jj<hh; jj++)
+    for (int ii=0; ii<ww; ii++) {
+      if (jj<height && ii<width) {
+	*dst++ = src[(jj*width+ii)*block.pixelSize+block.offset[0]];
+	*dst++ = src[(jj*width+ii)*block.pixelSize+block.offset[1]];
+	*dst++ = src[(jj*width+ii)*block.pixelSize+block.offset[2]];
+      }
+      else {
+	*dst++ = 255;
+	*dst++ = 255;
+	*dst++ = 255;
+      }
     }
 
   if(!ezMPEG_Add(&ms, pict)) {
