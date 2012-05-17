@@ -188,14 +188,12 @@ int ezMPEG_Init(ezMPEGStream *ms, const char *outfile, int hsize, int vsize, int
 		return 0;
 	}
 
-	//	if(hsize < 16 || hsize > 768) {
-	if(hsize < 16) {
+	if(hsize < 16 || hsize > 768) {
 		ezMPEG_SetError(ms, "ezMPEG_Init: Horizontal size should be between 16 and 768");
 		return 0;
 	}
 
-	//	if(vsize < 16 || vsize > 576) {
-	if(vsize < 16) {
+	if(vsize < 16 || vsize > 576) {
 		ezMPEG_SetError(ms, "ezMPEG_Init: Vertical size should be between 16 and 576");
 		return 0;
 	}
