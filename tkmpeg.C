@@ -22,7 +22,7 @@ TkMPEG* tkmpeg=NULL;
 int Tkmpeg_Init(Tcl_Interp* interp) {
 
   // Define Package Name
-  if (Tcl_PkgProvide(interp, "tkmpeg", "1.0") == TCL_ERROR)
+  if (Tcl_PkgProvide(interp, "Tkmpeg", "1.0") == TCL_ERROR)
     return TCL_ERROR;
 
   // Commands
