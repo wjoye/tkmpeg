@@ -135,7 +135,7 @@ TEA_ENABLE_THREADS
 # building as a shared library instead of a static library.
 #--------------------------------------------------------------------
 
-#TEA_ENABLE_SHARED
+TEA_ENABLE_SHARED
 
 #--------------------------------------------------------------------
 # This macro figures out what flags to use with the compiler/linker
@@ -160,6 +160,7 @@ TEA_ENABLE_SYMBOLS
 
 AC_DEFINE(USE_TCL_STUBS, 1, [Use Tcl stubs])
 AC_DEFINE(USE_TK_STUBS, 1, [Use Tk stubs])
+SHLIB_LD_LIBS='${LIBS} -lstdc++'
 
 #--------------------------------------------------------------------
 # This macro generates a line to use when building a library.  It
@@ -186,4 +187,4 @@ TEA_PROG_WISH
 # which require substituting th AC variables in.  Include these here.
 #--------------------------------------------------------------------
 
-AC_OUTPUT([Makefile])
+AC_OUTPUT([Makefile pkgIndex.tcl])
