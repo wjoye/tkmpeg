@@ -30,9 +30,7 @@ int Tkmpeg_Init(Tcl_Interp* interp) {
   Tcl_CreateCommand(interp, "mpeg", TkmpegCmd,
 		    (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
-  if (Tcl_PkgProvide(interp, PACKAGE_NAME, PACKAGE_VERSION))
-    return TCL_ERROR;
-
+  if (Tcl_PkgProvide(interp, PACKAGE_NAME, PACKAGE_VERSION) != TCL_OK)
     return TCL_ERROR;
 
   tkmpeg = new TkMPEG(interp);
